@@ -29,3 +29,10 @@ class Sotuv(Base):
     vaqt = Column(DateTime, default=datetime.utcnow)
 
     mahsulot = relationship("Mahsulot", back_populates="sotuvlar")
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
