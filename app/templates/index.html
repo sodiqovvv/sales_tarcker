@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Savdo Hisoblash</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+    <div class="container">
+        <h1>Savdo Hisoblash Ilovasi</h1>
+
+        <nav style="margin-top:10px;">
+            <a href="/" style="color:white; margin-right:20px; font-weight:bold;">
+                Bosh sahifa
+            </a>
+            <a href="/orders" style="color:white; font-weight:bold;">
+                Sotuvlar
+            </a>
+        </nav>
+
+    </div>
+</header>
+
+<main class="container main-grid">
+
+    <!-- MAHSULOT QO‘SHISH -->
+    <section class="card">
+        <h2>📦 Mahsulot qo‘shish</h2>
+
+        <form action="/mahsulot_qoshish" method="post"
+              enctype="multipart/form-data" class="form">
+
+            <label>Nomi
+                <input type="text" name="nomi" required>
+            </label>
+
+            <label>Narxi (so‘m)
+                <input type="number" step="0.01" name="narxi" required>
+            </label>
+
+            <label>Miqdor (dona)
+                <input type="number" name="miqdor" min="0" required>
+            </label>
+
+            <label>Rasm
+                <input type="file" name="rasm" accept="image/*">
+            </label>
+
+            <button type="submit" class="btn primary">Qo‘shish</button>
+        </form>
+    </section>
+
+    <!-- RO‘YXAT -->
+    <section class="card">
+        <h2>📋 Mahsulotlar</h2>
+
+        <form method="get" action="/" class="search-form">
+            <input type="text" name="q"
+                   placeholder="Qidirish..."
+                   value="{{ q if q else '' }}">
+            <button type="submit" class="btn">Qidirish</button>
+            <a href="/" class="btn">Tozalash</a>
+        </form>
+
+        {% if mahsulotlar|length == 0 %}
+            <p>Hozircha mahsulot yo‘q</p>
+        {% else %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Rasm</th>
+                    <th>Nomi</th>
+                    <th>Narxi</th>
+                    <th>Miqdor</th>
+                    <th>Sotish</th>
+                    <th>O‘chirish</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in mahsulotlar %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+
+                    <td>
+                        {% if m.rasm %}
+                            <img src="{{ m.rasm }}"
+                                 class="mahsulot-rasmi"
+                                 onclick="openModal('{{ m.rasm }}')">
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+
+                    <td>{{ m.nomi }}</td>
+                    <td>{{ "{:,.0f}".format(m.narxi) }} so‘m</td>
+
+                    <td>
+                        {% if m.miqdor > 0 %}
+                            {{ m.miqdor }} dona
+                        {% else %}
+                            <span style="color:red;">Tugagan</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if m.miqdor > 0 %}
+                        <form action="/sotish" method="post"
+                              style="display:flex; gap:5px;">
+                            <input type="hidden"
+                                   name="mahsulot_id"
+                                   value="{{ m.id }}">
+                            <input type="number"
+                                   name="soni"
+                                   min="1"
+                                   max="{{ m.miqdor }}"
+                                   required
+                                   style="width:70px;">
+                            <button type="submit"
+                                    class="btn primary">
+                                Sotish
+                            </button>
+                        </form>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <form action="/ochirish/{{ m.id }}"
+                              method="post"
+                              onsubmit="return confirm('Haqiqatan o‘chirmoqchimisiz?');">
+                            <button type="submit"
+                                    class="btn"
+                                    style="background:#dc3545; color:white;">
+                                O‘chirish
+                            </button>
+                        </form>
+                    </td>
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </section>
+
+</main>
+
+<!-- MODAL -->
+<div id="imageModal" class="modal" onclick="closeModal()">
+    <img class="modal-content" id="modalImage">
+</div>
+
+<script>
+function openModal(src) {
+    document.getElementById("imageModal").style.display = "flex";
+    document.getElementById("modalImage").src = src;
+}
+
+function closeModal() {
+    document.getElementById("imageModal").style.display = "none";
+}
+</script>
+
+</body>
+</html>

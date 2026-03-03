@@ -1,0 +1,178 @@
+/* ===== RESET ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+body {
+    background: #f4f6fb;
+    color: #222;
+}
+
+/* ===== HEADER ===== */
+.topbar {
+    background: linear-gradient(90deg, #2b6cb0, #3182ce);
+    color: white;
+    padding: 20px 0;
+    margin-bottom: 25px;
+}
+
+.container {
+    width: 95%;
+    max-width: 1100px;
+    margin: auto;
+}
+
+.topbar nav a {
+    color: white;
+    text-decoration: none;
+}
+
+.topbar nav a:hover {
+    text-decoration: underline;
+}
+
+/* ===== GRID ===== */
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+/* ===== CARD ===== */
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+}
+
+.card h2 {
+    margin-bottom: 15px;
+}
+
+/* ===== FORM ===== */
+.form label {
+    display: block;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.form input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background: #fafafa;
+}
+
+/* ===== BUTTON ===== */
+.btn {
+    padding: 9px 15px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn:hover {
+    background: #f0f0f0;
+}
+
+.btn.primary {
+    background: #2b6cb0;
+    color: white;
+    border-color: #2b6cb0;
+}
+
+.btn.primary:hover {
+    background: #1f4f85;
+}
+
+/* ===== SEARCH ===== */
+.search-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.search-form input {
+    flex: 1;
+    padding: 9px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+/* ===== TABLE ===== */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table thead {
+    background: #f1f5f9;
+}
+
+.table th,
+.table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.table tr:hover {
+    background: #f9fafc;
+}
+
+/* ===== PRODUCT IMAGE (BOSH SAHIFA) ===== */
+.mahsulot-rasmi {
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    display: block;
+}
+
+.mahsulot-rasmi:hover {
+    transform: scale(1.05);
+}
+
+/* ===== MODAL ===== */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.85);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    max-width: 85%;
+    max-height: 85%;
+    border-radius: 10px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mahsulot-rasmi {
+        width: 90px;
+        height: 90px;
+    }
+}

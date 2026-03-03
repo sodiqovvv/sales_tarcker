@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Sotuvlar Tarixi</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+    <div class="container">
+        <h1>Sotuvlar Tarixi</h1>
+        <nav style="margin-top:10px;">
+            <a href="/" style="color:white; margin-right:20px; font-weight:bold;">Bosh sahifa</a>
+            <a href="/orders" style="color:white; font-weight:bold;">Sotuvlar</a>
+        </nav>
+    </div>
+</header>
+
+<main class="container">
+    <section class="card">
+        <h2>📋 Barcha Sotuvlar</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Vaqt</th>
+                    <th>Mahsulot</th>
+                    <th>Miqdor</th>
+                    <th>Narxi (dona)</th>
+                    <th>Jami</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sotuvlar %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ s.vaqt.strftime("%Y-%m-%d %H:%M") }}</td>
+                    <td>
+                        {% if s.mahsulot %}
+                            {{ s.mahsulot.nomi }}
+                        {% else %}
+                            <span style="color:gray;">O‘chirilgan mahsulot</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ s.soni }} dona</td>
+                    <td>
+                        {% if s.mahsulot %}
+                            {{ "{:,.0f}".format(s.mahsulot.narxi) }} so‘m
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.mahsulot %}
+                            {{ "{:,.0f}".format(s.soni * s.mahsulot.narxi) }} so‘m
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</main>
+
+</body>
+</html>
