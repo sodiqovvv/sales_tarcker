@@ -55,7 +55,10 @@
 
     <!-- RO‘YXAT -->
     <section class="card">
-        <h2>📋 Mahsulotlar</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2>📋 Mahsulotlar</h2>
+            <a href="/logout" class="btn" style="background: #e53e3e; color: white;">Chiqish</a>
+        </div>
 
         <form method="get" action="/" class="search-form">
             <input type="text" name="q"
@@ -68,6 +71,7 @@
         {% if mahsulotlar|length == 0 %}
             <p>Hozircha mahsulot yo‘q</p>
         {% else %}
+        <div class="table-container">
         <table class="table">
             <thead>
                 <tr>
@@ -145,6 +149,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
         {% endif %}
     </section>
 
