@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Request, Form, File, UploadFile
+from fastapi import FastAPI, Depends, Request, Form, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -55,10 +55,22 @@ def mahsulot_qoshish(
 ):
     rasm_url = None
 
-    if rasm:
+    if rasm and rasm.filename:
+        # File turi va kengaytmani tekshirish (Unrestricted File Upload oldini olish)
+        ruxsat_etilgan_kengaytmalar = {"jpg", "jpeg", "png", "gif", "webp", "svg"}
+
+        if "." not in rasm.filename:
+            raise HTTPException(status_code=400, detail="Fayl kengaytmasi topilmadi")
+
+        kengaytma = rasm.filename.split(".")[-1].lower()
+        if kengaytma not in ruxsat_etilgan_kengaytmalar:
+            raise HTTPException(status_code=400, detail="Faqat rasm fayllari yuklanishi mumkin")
+
+        if not rasm.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="Fayl tarkibi rasm emas")
+
         os.makedirs("app/static/uploads", exist_ok=True)
 
-        kengaytma = rasm.filename.split(".")[-1]
         yangi_nomi = f"{uuid.uuid4()}.{kengaytma}"
         saqlash_joyi = f"app/static/uploads/{yangi_nomi}"
 
