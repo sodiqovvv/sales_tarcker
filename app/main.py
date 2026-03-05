@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Request, Form, File, UploadFile
+from fastapi import FastAPI, Depends, Request, Form, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -9,7 +9,7 @@ import shutil
 import uuid
 import os
 
-Base.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Savdo Hisoblash Ilovasi")
 
@@ -38,8 +38,7 @@ def bosh_sahifa(
 
     mahsulotlar = query.all()
 
-    return templates.TemplateResponse("index.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "index.html", {
         "mahsulotlar": mahsulotlar,
         "q": q
     })
@@ -48,17 +47,29 @@ def bosh_sahifa(
 @app.post("/mahsulot_qoshish")
 def mahsulot_qoshish(
     nomi: str = Form(...),
-    narxi: float = Form(...),
-    miqdor: int = Form(...),
+    narxi: float = Form(..., ge=0),
+    miqdor: int = Form(..., ge=0),
     rasm: UploadFile = File(None),
     db: Session = Depends(baza_olish)
 ):
     rasm_url = None
 
-    if rasm:
+    if rasm and rasm.filename:
+        # File turi va kengaytmani tekshirish (Unrestricted File Upload oldini olish)
+        ruxsat_etilgan_kengaytmalar = {"jpg", "jpeg", "png", "gif", "webp", "svg"}
+
+        if "." not in rasm.filename:
+            raise HTTPException(status_code=400, detail="Fayl kengaytmasi topilmadi")
+
+        kengaytma = rasm.filename.split(".")[-1].lower()
+        if kengaytma not in ruxsat_etilgan_kengaytmalar:
+            raise HTTPException(status_code=400, detail="Faqat rasm fayllari yuklanishi mumkin")
+
+        if not rasm.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="Fayl tarkibi rasm emas")
+
         os.makedirs("app/static/uploads", exist_ok=True)
 
-        kengaytma = rasm.filename.split(".")[-1]
         yangi_nomi = f"{uuid.uuid4()}.{kengaytma}"
         saqlash_joyi = f"app/static/uploads/{yangi_nomi}"
 
@@ -82,7 +93,7 @@ def mahsulot_qoshish(
 @app.post("/sotish")
 def sotish(
     mahsulot_id: int = Form(...),
-    soni: int = Form(...),
+    soni: int = Form(..., ge=1),
     db: Session = Depends(baza_olish)
 ):
     mahsulot = db.query(models.Mahsulot).filter(
@@ -120,7 +131,8 @@ def ochirish(mahsulot_id: int, db: Session = Depends(baza_olish)):
 
     # Agar rasm bo‘lsa, fayldan o‘chiramiz
     if mahsulot.rasm:
-        rasm_path = "app" + mahsulot.rasm  # /static/uploads/... ni app/static/uploads/... ga aylantiramiz
+        rasm_fayl = os.path.basename(mahsulot.rasm)
+        rasm_path = os.path.join("app", "static", "uploads", rasm_fayl)
         if os.path.exists(rasm_path):
             os.remove(rasm_path)
 
@@ -133,7 +145,6 @@ def ochirish(mahsulot_id: int, db: Session = Depends(baza_olish)):
 def orders_sahifa(request: Request, db: Session = Depends(baza_olish)):
     sotuvlar = db.query(models.Sotuv).all()
 
-    return templates.TemplateResponse("orders.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "orders.html", {
         "sotuvlar": sotuvlar
     })
