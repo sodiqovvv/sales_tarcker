@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 __pycache__/
 *.py[cod]
 *$py.class
@@ -21,3 +22,6 @@ venv.bak/
 
 # Pytest
 .pytest_cache/
+=======
+service-account.json
+>>>>>>> main
