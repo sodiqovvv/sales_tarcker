@@ -35,7 +35,13 @@
                 {% for s in sotuvlar %}
                 <tr>
                     <td>{{ loop.index }}</td>
-                    <td>{{ s.vaqt.strftime("%Y-%m-%d %H:%M") }}</td>
+                    <td>
+                        {% if s.vaqt %}
+                            {{ s.vaqt.strftime("%Y-%m-%d %H:%M") }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
                     <td>
                         {% if s.mahsulot %}
                             {{ s.mahsulot.nomi }}

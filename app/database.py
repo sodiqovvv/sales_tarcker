@@ -1,17 +1,10 @@
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, declarative_base
+from google.cloud import firestore
 
-DATABASE_URL = "sqlite:///./sales.db"
+# Initialize a single global Firestore client instance to be reused across requests
+_db_client = firestore.Client(project="clear-booking-457205-t9", database="(default)")
 
-engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
-)
-
-# WAL rejimi
-with engine.connect() as conn:
-    conn.execute(text("PRAGMA journal_mode=WAL;"))
-    conn.execute(text("PRAGMA synchronous=FULL;"))
-    conn.commit()
-
-SessionLocal = sessionmaker(bind=engine)
-Base = declarative_base()
+def get_db() -> firestore.Client:
+    """
+    Returns the global Firestore client instance.
+    """
+    return _db_client
