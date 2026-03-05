@@ -21,7 +21,6 @@ class Mahsulot(Base):
 
 class Sotuv(Base):
     __tablename__ = "sotuvlar"
-    # Change this line in your Sotuv class
 
     id = Column(Integer, primary_key=True, index=True)
     mahsulot_id = Column(Integer, ForeignKey("mahsulotlar.id", ondelete="SET NULL"), nullable=True)
