@@ -62,6 +62,11 @@ def sotish(mahsulot_id: str = Form(...), soni: int = Form(..., ge=1), db: firest
     mahsulot_ref = db.collection("mahsulotlar").document(mahsulot_id)
     doc = mahsulot_ref.get()
     if not doc.exists or doc.to_dict().get("miqdor", 0) < soni:
+        mahsulot = db.query(models.Mahsulot).filter(
+        models.Mahsulot.id == mahsulot_id
+    ).first()
+
+    if not mahsulot:
         return RedirectResponse("/", status_code=303)
     
     mahsulot_ref.update({"miqdor": firestore.Increment(-soni)})
