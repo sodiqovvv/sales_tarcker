@@ -1,1 +1,12 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Security - IMPORTANT!
 service-account.json
