@@ -9,7 +9,7 @@ import shutil
 import uuid
 import os
 
-Base.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Savdo Hisoblash Ilovasi")
 
@@ -38,8 +38,7 @@ def bosh_sahifa(
 
     mahsulotlar = query.all()
 
-    return templates.TemplateResponse("index.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "index.html", {
         "mahsulotlar": mahsulotlar,
         "q": q
     })
@@ -133,7 +132,6 @@ def ochirish(mahsulot_id: int, db: Session = Depends(baza_olish)):
 def orders_sahifa(request: Request, db: Session = Depends(baza_olish)):
     sotuvlar = db.query(models.Sotuv).all()
 
-    return templates.TemplateResponse("orders.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "orders.html", {
         "sotuvlar": sotuvlar
     })
