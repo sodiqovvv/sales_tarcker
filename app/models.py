@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, func
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -15,17 +15,15 @@ class Mahsulot(Base):
 
     sotuvlar = relationship(
         "Sotuv",
-        back_populates="mahsulot",
-        cascade="all, delete"
+        back_populates="mahsulot"
     )
 
 class Sotuv(Base):
     __tablename__ = "sotuvlar"
-    # Change this line in your Sotuv class
 
     id = Column(Integer, primary_key=True, index=True)
     mahsulot_id = Column(Integer, ForeignKey("mahsulotlar.id", ondelete="SET NULL"), nullable=True)
     soni = Column(Integer, nullable=False)
-    vaqt = Column(DateTime, default=datetime.utcnow)
+    vaqt = Column(DateTime, default=func.now())
 
     mahsulot = relationship("Mahsulot", back_populates="sotuvlar")
