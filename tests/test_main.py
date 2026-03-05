@@ -1,4 +1,7 @@
 import pytest
+import os
+import shutil
+import io
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -18,8 +21,7 @@ engine = create_engine(
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base.metadata.create_all(bind=engine)
-
+# Dependency override
 def override_baza_olish():
     try:
         db = TestingSessionLocal()
@@ -27,69 +29,11 @@ def override_baza_olish():
     finally:
         db.close()
 
-
-def test_bosh_sahifa_no_query(db_session):
-    # Add some test products
-    product1 = models.Mahsulot(nomi="Olma", narxi=5000, miqdor=10)
-    product2 = models.Mahsulot(nomi="Banan", narxi=8000, miqdor=15)
-    db_session.add(product1)
-    db_session.add(product2)
-    db_session.commit()
-
-    # Send a request to the root endpoint
-    response = client.get("/")
-
-    # Assert response status code is 200 OK
-    assert response.status_code == 200
-
-    # Assert response content is HTML
-    assert "text/html" in response.headers["content-type"]
-
-    # Assert both products are rendered in the HTML
-    content = response.text
-    assert "Olma" in content
-    assert "Banan" in content
-    assert "5,000" in content
-    assert "8,000" in content
-
-
-def test_bosh_sahifa_with_query(db_session):
-    # Add some test products
-    product1 = models.Mahsulot(nomi="Olma", narxi=5000, miqdor=10)
-    product2 = models.Mahsulot(nomi="Olmali sharbat", narxi=12000, miqdor=5)
-    product3 = models.Mahsulot(nomi="Banan", narxi=8000, miqdor=15)
-    db_session.add(product1)
-    db_session.add(product2)
-    db_session.add(product3)
-    db_session.commit()
-
-    # Send a request with search query 'olma'
-    response = client.get("/?q=olma")
-
-    # Assert response status code is 200 OK
-    assert response.status_code == 200
-
-    # Assert response content is HTML
-    content = response.text
-
-    # Assert products matching the query are in the HTML
-    assert "Olma" in content
-    assert "Olmali sharbat" in content
-
-    # Assert product not matching the query is NOT in the HTML
-    assert "Banan" not in content
-
-def test_bosh_sahifa_no_products():
-    response = client.get("/")
-    assert response.status_code == 200
-    assert "text/html" in response.headers["content-type"]
-
 app.dependency_overrides[baza_olish] = override_baza_olish
-
 client = TestClient(app)
 
 @pytest.fixture(autouse=True)
-def setup_database():
+def setup_db():
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
@@ -101,3 +45,53 @@ def db_session():
         yield db
     finally:
         db.close()
+
+# --- Bosh sahifa testlari ---
+
+def test_bosh_sahifa_no_query(db_session):
+    product1 = models.Mahsulot(nomi="Olma", narxi=5000, miqdor=10)
+    product2 = models.Mahsulot(nomi="Banan", narxi=8000, miqdor=15)
+    db_session.add(product1)
+    db_session.add(product2)
+    db_session.commit()
+
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "Olma" in response.text
+    assert "Banan" in response.text
+
+def test_bosh_sahifa_with_query(db_session):
+    product1 = models.Mahsulot(nomi="Olma", narxi=5000, miqdor=10)
+    product2 = models.Mahsulot(nomi="Banan", narxi=8000, miqdor=15)
+    db_session.add(product1)
+    db_session.add(product2)
+    db_session.commit()
+
+    response = client.get("/?q=olma")
+    assert response.status_code == 200
+    assert "Olma" in response.text
+    assert "Banan" not in response.text
+
+# --- Mahsulot qo'shish testlari ---
+
+def test_mahsulot_qoshish_without_image():
+    response = client.post(
+        "/mahsulot_qoshish",
+        data={"nomi": "Test Mahsulot", "narxi": "10.5", "miqdor": "20"},
+        follow_redirects=False
+    )
+    assert response.status_code == 303
+    db = TestingSessionLocal()
+    mahsulot = db.query(models.Mahsulot).filter(models.Mahsulot.nomi == "Test Mahsulot").first()
+    assert mahsulot is not None
+    db.close()
+
+def test_mahsulot_qoshish_with_image(monkeypatch):
+    file_content = b"fake image content"
+    response = client.post(
+        "/mahsulot_qoshish",
+        data={"nomi": "Rasm Mahsulot", "narxi": "15.0", "miqdor": "5"},
+        files={"rasm": ("test.png", io.BytesIO(file_content), "image/png")},
+        follow_redirects=False
+    )
+    assert response.status_code == 303

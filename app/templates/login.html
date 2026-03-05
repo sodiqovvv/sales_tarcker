@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirish - Savdo Hisoblash</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+    <div class="container">
+        <h1>Savdo Hisoblash Ilovasi</h1>
+    </div>
+</header>
+
+<main class="container" style="max-width: 400px; margin-top: 50px;">
+    <section class="card">
+        <h2>🔐 Kirish</h2>
+        {% if error %}
+            <p style="color: red; margin-bottom: 15px;">{{ error }}</p>
+        {% endif %}
+        <form action="/login" method="post" class="form">
+            <label>Foydalanuvchi nomi
+                <input type="text" name="username" required>
+            </label>
+
+            <label>Parol
+                <input type="password" name="password" required>
+            </label>
+
+            <button type="submit" class="btn primary" style="width: 100%;">Kirish</button>
+        </form>
+        <p style="margin-top: 15px; text-align: center;">
+            Hisobingiz yo'qmi? <a href="/register">Ro'yxatdan o'ting</a>
+        </p>
+    </section>
+</main>
+
+</body>
+</html>
