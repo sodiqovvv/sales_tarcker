@@ -48,8 +48,8 @@ def bosh_sahifa(
 @app.post("/mahsulot_qoshish")
 def mahsulot_qoshish(
     nomi: str = Form(...),
-    narxi: float = Form(...),
-    miqdor: int = Form(...),
+    narxi: float = Form(..., ge=0),
+    miqdor: int = Form(..., ge=0),
     rasm: UploadFile = File(None),
     db: Session = Depends(baza_olish)
 ):
@@ -94,7 +94,7 @@ def mahsulot_qoshish(
 @app.post("/sotish")
 def sotish(
     mahsulot_id: int = Form(...),
-    soni: int = Form(...),
+    soni: int = Form(..., ge=1),
     db: Session = Depends(baza_olish)
 ):
     mahsulot = db.query(models.Mahsulot).filter(
