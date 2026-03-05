@@ -120,7 +120,8 @@ def ochirish(mahsulot_id: int, db: Session = Depends(baza_olish)):
 
     # Agar rasm bo‘lsa, fayldan o‘chiramiz
     if mahsulot.rasm:
-        rasm_path = "app" + mahsulot.rasm  # /static/uploads/... ni app/static/uploads/... ga aylantiramiz
+        rasm_fayl = os.path.basename(mahsulot.rasm)
+        rasm_path = os.path.join("app", "static", "uploads", rasm_fayl)
         if os.path.exists(rasm_path):
             os.remove(rasm_path)
 
