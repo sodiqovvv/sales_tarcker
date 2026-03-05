@@ -175,4 +175,28 @@ body {
         width: 90px;
         height: 90px;
     }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .table {
+        min-width: 600px;
+    }
+}
+
+@media (max-width: 600px) {
+    .topbar h1 {
+        font-size: 1.5rem;
+    }
+
+    .topbar nav {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .search-form {
+        flex-direction: column;
+    }
 }

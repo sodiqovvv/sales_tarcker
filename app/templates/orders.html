@@ -19,7 +19,11 @@
 
 <main class="container">
     <section class="card">
-        <h2>📋 Barcha Sotuvlar</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2>📋 Barcha Sotuvlar</h2>
+            <a href="/logout" class="btn" style="background: #e53e3e; color: white;">Chiqish</a>
+        </div>
+        <div class="table-container">
         <table class="table">
             <thead>
                 <tr>
@@ -68,6 +72,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </section>
 </main>
 
