@@ -76,7 +76,11 @@ def ochirish(mahsulot_id: str, db: firestore.Client = Depends(baza_olish)):
     doc = ref.get()
     if doc.exists:
         rasm = doc.to_dict().get("rasm")
-        if rasm and os.path.exists("app" + rasm):
-            os.remove("app" + rasm)
+        if rasm:
+            # Use os.path.basename to prevent path traversal
+            filename = os.path.basename(rasm)
+            path = os.path.join("app/static/uploads", filename)
+            if os.path.isfile(path):
+                os.remove(path)
         ref.delete()
     return RedirectResponse("/", status_code=303)
