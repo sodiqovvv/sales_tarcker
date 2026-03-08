@@ -1,0 +1,4 @@
+## 2025-05-15 - Path Traversal and Insecure File Uploads
+**Vulnerability:** The `/ochirish` endpoint performed file deletions using unsanitized paths from the database (`os.remove("app" + rasm)`), which could be exploited for path traversal if malicious paths were stored. Additionally, the `/mahsulot_qoshish` endpoint allowed arbitrary file uploads without extension or content-type validation.
+**Learning:** Even data retrieved from the database should be treated as untrusted when used in filesystem operations. A lack of upload validation can lead to Remote Code Execution (RCE) or other server-side attacks.
+**Prevention:** Use `os.path.basename()` to sanitize filenames and strictly join them to a trusted target directory. Implement allow-lists for file extensions and verify MIME types for all user-provided uploads.

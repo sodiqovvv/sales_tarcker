@@ -45,8 +45,17 @@ def mahsulot_qoshish(
 ):
     rasm_url = None
     if rasm and rasm.filename:
+        # Security: Validate file extension and content type
+        ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "svg"}
+        ext = rasm.filename.split(".")[-1].lower()
+        if ext not in ALLOWED_EXTENSIONS or not rasm.content_type.startswith("image/"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Faqat rasm fayllari ruxsat etiladi (jpg, png, webp, svg)"
+            )
+
         os.makedirs("app/static/uploads", exist_ok=True)
-        yangi_nomi = f"{uuid.uuid4()}.{rasm.filename.split('.')[-1]}"
+        yangi_nomi = f"{uuid.uuid4()}.{ext}"
         saqlash_joyi = f"app/static/uploads/{yangi_nomi}"
         with open(saqlash_joyi, "wb") as buffer:
             shutil.copyfileobj(rasm.file, buffer)
@@ -76,7 +85,11 @@ def ochirish(mahsulot_id: str, db: firestore.Client = Depends(baza_olish)):
     doc = ref.get()
     if doc.exists:
         rasm = doc.to_dict().get("rasm")
-        if rasm and os.path.exists("app" + rasm):
-            os.remove("app" + rasm)
+        if rasm:
+            # Security: Sanitize filename to prevent path traversal and restrict deletion to uploads directory
+            filename = os.path.basename(rasm)
+            file_path = os.path.join("app/static/uploads", filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
         ref.delete()
     return RedirectResponse("/", status_code=303)
