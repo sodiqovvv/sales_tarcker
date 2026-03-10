@@ -4,12 +4,27 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from google.cloud import firestore
 from app.database import get_db
-from app import models, schemas
+from app import models, schemas, auth
 import shutil
 import uuid
 import os
 
 app = FastAPI(title="Savdo Hisoblash Ilovasi")
+
+async def get_current_user(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_303_SEE_OTHER,
+            headers={"Location": "/login"}
+        )
+    payload = auth.decode_access_token(token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_303_SEE_OTHER,
+            headers={"Location": "/login"}
+        )
+    return payload.get("sub")
 
 templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -17,8 +32,62 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 def baza_olish():
     return get_db()
 
+@app.get("/login", response_class=HTMLResponse)
+def login_sahifa(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.post("/login")
+def login(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    db: firestore.Client = Depends(baza_olish)
+):
+    users_ref = db.collection("users").where("username", "==", username).limit(1).get()
+    if not users_ref:
+        return templates.TemplateResponse("login.html", {"request": request, "error": "Foydalanuvchi topilmadi"})
+
+    user_doc = users_ref[0]
+    user_data = user_doc.to_dict()
+
+    if not auth.verify_password(password, user_data.get("password")):
+        return templates.TemplateResponse("login.html", {"request": request, "error": "Parol noto'g'ri"})
+
+    access_token = auth.create_access_token(data={"sub": username})
+    response = RedirectResponse("/", status_code=303)
+    response.set_cookie(key="access_token", value=access_token, httponly=True)
+    return response
+
+@app.get("/register", response_class=HTMLResponse)
+def register_sahifa(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
+
+@app.post("/register")
+def register(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    db: firestore.Client = Depends(baza_olish)
+):
+    users_ref = db.collection("users").where("username", "==", username).limit(1).get()
+    if users_ref:
+        return templates.TemplateResponse("register.html", {"request": request, "error": "Foydalanuvchi nomi band"})
+
+    hashed_password = auth.get_password_hash(password)
+    db.collection("users").add({
+        "username": username,
+        "password": hashed_password
+    })
+    return RedirectResponse("/login", status_code=303)
+
+@app.get("/logout")
+def logout():
+    response = RedirectResponse("/login", status_code=303)
+    response.delete_cookie(key="access_token")
+    return response
+
 @app.get("/", response_class=HTMLResponse)
-def bosh_sahifa(request: Request, q: str = None, db: firestore.Client = Depends(baza_olish)):
+def bosh_sahifa(request: Request, q: str = None, db: firestore.Client = Depends(baza_olish), user: str = Depends(get_current_user)):
     docs = db.collection('mahsulotlar').stream()
     mahsulotlar = []
     for doc in docs:
@@ -41,7 +110,8 @@ def mahsulot_qoshish(
     narxi: float = Form(..., ge=0),
     miqdor: int = Form(..., ge=0),
     rasm: UploadFile = File(None),
-    db: firestore.Client = Depends(baza_olish)
+    db: firestore.Client = Depends(baza_olish),
+    user: str = Depends(get_current_user)
 ):
     rasm_url = None
     if rasm and rasm.filename:
@@ -58,7 +128,12 @@ def mahsulot_qoshish(
     return RedirectResponse("/", status_code=303)
 
 @app.post("/sotish")
-def sotish(mahsulot_id: str = Form(...), soni: int = Form(..., ge=1), db: firestore.Client = Depends(baza_olish)):
+def sotish(
+    mahsulot_id: str = Form(...),
+    soni: int = Form(..., ge=1),
+    db: firestore.Client = Depends(baza_olish),
+    user: str = Depends(get_current_user)
+):
     mahsulot_ref = db.collection("mahsulotlar").document(mahsulot_id)
     doc = mahsulot_ref.get()
     if not doc.exists or doc.to_dict().get("miqdor", 0) < soni:
@@ -70,8 +145,39 @@ def sotish(mahsulot_id: str = Form(...), soni: int = Form(..., ge=1), db: firest
     })
     return RedirectResponse("/", status_code=303)
 
+@app.get("/orders", response_class=HTMLResponse)
+def sotuvlar_tarixi(
+    request: Request,
+    db: firestore.Client = Depends(baza_olish),
+    user: str = Depends(get_current_user)
+):
+    docs = db.collection('sotuvlar').order_by('vaqt', direction=firestore.Query.DESCENDING).stream()
+    sotuvlar = []
+    for doc in docs:
+        d = doc.to_dict()
+        m_id = d.get('mahsulot_id')
+        mahsulot = None
+        if m_id:
+            m_doc = db.collection('mahsulotlar').document(m_id).get()
+            if m_doc.exists:
+                md = m_doc.to_dict()
+                mahsulot = models.Mahsulot(id=m_id, nomi=md.get('nomi',''), narxi=md.get('narxi',0.0))
+
+        sotuvlar.append(models.Sotuv(
+            id=doc.id,
+            mahsulot_id=m_id,
+            soni=d.get('soni', 0),
+            vaqt=d.get('vaqt'),
+            mahsulot=mahsulot
+        ))
+    return templates.TemplateResponse("orders.html", {"request": request, "sotuvlar": sotuvlar})
+
 @app.post("/ochirish/{mahsulot_id}")
-def ochirish(mahsulot_id: str, db: firestore.Client = Depends(baza_olish)):
+def ochirish(
+    mahsulot_id: str,
+    db: firestore.Client = Depends(baza_olish),
+    user: str = Depends(get_current_user)
+):
     ref = db.collection("mahsulotlar").document(mahsulot_id)
     doc = ref.get()
     if doc.exists:
