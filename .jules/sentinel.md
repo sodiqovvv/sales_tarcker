@@ -1,0 +1,4 @@
+## 2025-05-15 - [Vulnerability in File Upload Handling]
+**Vulnerability:** The application was vulnerable to Stored XSS and potentially other attacks through unrestricted file uploads. Users could upload arbitrary files (e.g., .html) which would be served with their original content type, allowing execution of malicious scripts in the context of the application's origin.
+**Learning:** Even when using UUIDs for filenames to prevent overwriting, the lack of extension and content-type validation allows for the delivery of malicious payloads. Path traversal was also a risk during file deletion.
+**Prevention:** Implement strict allow-lists for file extensions and validate the `Content-Type` header. Always use `os.path.basename()` on database-derived file paths before performing filesystem operations like `os.remove()`.
