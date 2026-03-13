@@ -37,7 +37,7 @@ def bosh_sahifa(request: Request, q: str = None, db: firestore.Client = Depends(
 
 @app.post("/mahsulot_qoshish")
 def mahsulot_qoshish(
-    nomi: str = Form(...),
+    nomi: str = Form(..., min_length=2, max_length=100),
     narxi: float = Form(..., ge=0),
     miqdor: int = Form(..., ge=0),
     rasm: UploadFile = File(None),
@@ -45,8 +45,18 @@ def mahsulot_qoshish(
 ):
     rasm_url = None
     if rasm and rasm.filename:
+        # Validate file extension and content type
+        # SVG is excluded to prevent potential Stored XSS attacks
+        ruxsat_etilgan_kengaytmalar = {"jpg", "jpeg", "png", "webp"}
+        fayl_kengaytmasi = rasm.filename.split(".")[-1].lower()
+        if fayl_kengaytmasi not in ruxsat_etilgan_kengaytmalar or not rasm.content_type.startswith("image/"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Faqat rasm fayllari ruxsat etiladi (jpg, jpeg, png, webp)."
+            )
+
         os.makedirs("app/static/uploads", exist_ok=True)
-        yangi_nomi = f"{uuid.uuid4()}.{rasm.filename.split('.')[-1]}"
+        yangi_nomi = f"{uuid.uuid4()}.{fayl_kengaytmasi}"
         saqlash_joyi = f"app/static/uploads/{yangi_nomi}"
         with open(saqlash_joyi, "wb") as buffer:
             shutil.copyfileobj(rasm.file, buffer)
@@ -75,8 +85,13 @@ def ochirish(mahsulot_id: str, db: firestore.Client = Depends(baza_olish)):
     ref = db.collection("mahsulotlar").document(mahsulot_id)
     doc = ref.get()
     if doc.exists:
-        rasm = doc.to_dict().get("rasm")
-        if rasm and os.path.exists("app" + rasm):
-            os.remove("app" + rasm)
+        rasm_url = doc.to_dict().get("rasm")
+        if rasm_url:
+            # Secure file deletion by using basename to prevent path traversal
+            fayl_nomi = os.path.basename(rasm_url)
+            rasm_yo_li = os.path.join("app/static/uploads", fayl_nomi)
+            # Ensure the file is actually in the uploads directory
+            if os.path.isfile(rasm_yo_li):
+                os.remove(rasm_yo_li)
         ref.delete()
     return RedirectResponse("/", status_code=303)
