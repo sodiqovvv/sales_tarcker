@@ -37,7 +37,7 @@ def bosh_sahifa(request: Request, q: str = None, db: firestore.Client = Depends(
 
 @app.post("/mahsulot_qoshish")
 def mahsulot_qoshish(
-    nomi: str = Form(...),
+    nomi: str = Form(..., min_length=2, max_length=100),
     narxi: float = Form(..., ge=0),
     miqdor: int = Form(..., ge=0),
     rasm: UploadFile = File(None),
@@ -45,8 +45,18 @@ def mahsulot_qoshish(
 ):
     rasm_url = None
     if rasm and rasm.filename:
+        # Check file extension to prevent SVG uploads (Stored XSS risk)
+        ruxsat_etilgan = {'jpg', 'jpeg', 'png', 'webp'}
+        fayl_kengaytmasi = rasm.filename.split('.')[-1].lower()
+        if fayl_kengaytmasi not in ruxsat_etilgan:
+            raise HTTPException(status_code=400, detail="Faqat rasm fayllari (jpg, jpeg, png, webp) ruxsat etiladi.")
+
+        # Check content type
+        if not rasm.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="Faqat rasm fayllari ruxsat etiladi.")
+
         os.makedirs("app/static/uploads", exist_ok=True)
-        yangi_nomi = f"{uuid.uuid4()}.{rasm.filename.split('.')[-1]}"
+        yangi_nomi = f"{uuid.uuid4()}.{fayl_kengaytmasi}"
         saqlash_joyi = f"app/static/uploads/{yangi_nomi}"
         with open(saqlash_joyi, "wb") as buffer:
             shutil.copyfileobj(rasm.file, buffer)
@@ -75,8 +85,12 @@ def ochirish(mahsulot_id: str, db: firestore.Client = Depends(baza_olish)):
     ref = db.collection("mahsulotlar").document(mahsulot_id)
     doc = ref.get()
     if doc.exists:
-        rasm = doc.to_dict().get("rasm")
-        if rasm and os.path.exists("app" + rasm):
-            os.remove("app" + rasm)
+        rasm_yoli = doc.to_dict().get("rasm")
+        if rasm_yoli:
+            # Sanitize path to prevent path traversal
+            fayl_nomi = os.path.basename(rasm_yoli)
+            xavfsiz_yol = os.path.join("app/static/uploads", fayl_nomi)
+            if os.path.isfile(xavfsiz_yol):
+                os.remove(xavfsiz_yol)
         ref.delete()
     return RedirectResponse("/", status_code=303)
