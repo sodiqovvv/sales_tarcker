@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
+
 @dataclass
 class Mahsulot:
     id: str
@@ -9,6 +10,7 @@ class Mahsulot:
     narxi: float
     miqdor: int = 0
     rasm: Optional[str] = None
+
 
 @dataclass
 class Sotuv:
